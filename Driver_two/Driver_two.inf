@@ -1,0 +1,86 @@
+;
+; Driver_two.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=Driver_two.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+Driver_two_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+Driver_two.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%Driver_two.DeviceDesc%=Driver_two_Device, Root\Driver_two ; TODO: edit hw-id
+
+[Driver_two_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+Driver_two.sys
+
+;-------------- Service installation
+[Driver_two_Device.NT.Services]
+AddService = Driver_two,%SPSVCINST_ASSOCSERVICE%, Driver_two_Service_Inst
+
+; -------------- Driver_two driver install sections
+[Driver_two_Service_Inst]
+DisplayName    = %Driver_two.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\Driver_two.sys
+
+;
+;--- Driver_two_Device Coinstaller installation ------
+;
+
+[Driver_two_Device.NT.CoInstallers]
+AddReg=Driver_two_Device_CoInstaller_AddReg
+CopyFiles=Driver_two_Device_CoInstaller_CopyFiles
+
+[Driver_two_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[Driver_two_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[Driver_two_Device.NT.Wdf]
+KmdfService =  Driver_two, Driver_two_wdfsect
+[Driver_two_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "Driver_two Installation Disk"
+Driver_two.DeviceDesc = "Driver_two Device"
+Driver_two.SVCDESC = "Driver_two Service"
