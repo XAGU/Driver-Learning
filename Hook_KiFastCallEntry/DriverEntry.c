@@ -87,7 +87,7 @@ VOID FilterKiFastCallEntry(ULONG_PTR ServiceTableBase, ULONG_PTR FunIndex)
 		}*/
 		if (strstr((CHAR*)PsGetCurrentProcess() + 0x16c, "InstDrv"))
 		{
-			KdPrint(("%s---%d", (char*)PsGetCurrentProcess() + 0x16c,FunIndex));
+			KdPrint(("%s---%d", (char*)PsGetCurrentProcess() + 0x16c, FunIndex));
 		}
 	}
 }
@@ -106,8 +106,8 @@ VOID NewKiFastCallEntry()
 
 		popfd
 		popad
-		sub esp,ecx
-		shr ecx,2
+		sub esp, ecx
+		shr ecx, 2
 		jmp g_goto_origfunc
 	}
 }
@@ -158,13 +158,13 @@ NewNtCreateFile(
 	__asm
 	{
 		pushad
-		mov eax,[ebp + 0x4]
-		mov u_call_retaddr,eax
+		mov eax, [ebp + 0x4]
+		mov u_call_retaddr, eax
 		popad
 	}
 
 	g_fasthook_point = SerachHookPointer(u_call_retaddr);
-	if (g_fasthook_point==0)
+	if (g_fasthook_point == 0)
 	{
 		KdPrint(("hookµ„—∞’“ ß∞‹!"));
 	}
