@@ -3,6 +3,7 @@
 #include "pch.h"
 #include <windows.h>
 #include <stdio.h>
+#include <iostream>
 
 int main()
 {
@@ -13,7 +14,7 @@ int main()
 	LARGE_INTEGER FileOffset;
 	IMAGE_DOS_HEADER ImageDosHeader;
 	IMAGE_NT_HEADERS ImageNtHeaders;
-	IMAGE_SECTION_HEADER ImageSectionHeader;
+	IMAGE_SECTION_HEADER *pImageSectionHeader;
 	hFile = CreateFile(L"D:\\桌面\\Read_Write_Test.exe",
 		FILE_ALL_ACCESS,
 		0,
@@ -65,16 +66,30 @@ int main()
 		return 0;
 	}
 
-	for (uIndex = 1; uIndex <= ImageNtHeaders.FileHeader.NumberOfSections; uIndex++)
+	pImageSectionHeader = (IMAGE_SECTION_HEADER*)malloc(sizeof(IMAGE_SECTION_HEADER)*ImageNtHeaders.FileHeader.NumberOfSections);
+	if (pImageSectionHeader==0)
 	{
-		bStatus = ReadFile(hFile, &ImageSectionHeader, sizeof(IMAGE_SECTION_HEADER), &dwRetSize, NULL);
-		if (!bStatus)
-		{
-			printf("Read ImageSectionHeader[%d] Failed %d", uIndex, GetLastError());
-			CloseHandle(hFile);
-			return 0;
-		}
+		CloseHandle(hFile);
+		return 0;
+	}
+
+	bStatus = ReadFile(hFile,
+		pImageSectionHeader,
+		sizeof(IMAGE_SECTION_HEADER)*ImageNtHeaders.FileHeader.NumberOfSections,
+		&dwRetSize,
+		NULL
+	);
+	if (!bStatus)
+	{
+		printf("Read IMAGE_SECTION_HEADER Failed %d", GetLastError());
+		CloseHandle(hFile);
+		return 0;
+	}
+	for (uIndex = 0; uIndex < ImageNtHeaders.FileHeader.NumberOfSections; uIndex++)
+	{
+		printf("pImageSectionHeader[%d]:%s\n", uIndex, &pImageSectionHeader[uIndex].Name);
 	}
 	CloseHandle(hFile);
+	getchar();
 	return 1;
 }
