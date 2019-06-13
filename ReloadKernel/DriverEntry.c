@@ -4,16 +4,58 @@
 
 #define __Max(a,b) a>b?a:b
 
-NTSTATUS ReLocMoudle(PVOID pNewImage, PVOID pOrigImage)
+//global
+PVOID g_lpVirtualPointer;
+
+//基址重定位
+VOID ReLocMoudle(PVOID pNewImage, PVOID pOrigImage)
 {
+	ULONG_PTR				uIndex;
+	ULONG_PTR				uRelocTableSize;
+	USHORT					TypeValue;
+	USHORT					*pwOffsetArrayAddress;
+	ULONG_PTR				uTypeOffsetArraySize;
+
+	ULONG_PTR				uRelocOffset;
+
+	ULONG_PTR				uRelocAddress;
+
 	IMAGE_DATA_DIRECTORY	ImageDataDirectory;
-	IMAGE_DOS_HEADER		ImageDosHeader;
-	IMAGE_NT_HEADERS		ImageNtHeaders;
-	ImageDosHeader = (PIMAGE_DOS_HEADER)pNewImage;
-	return STATUS_SUCCESS;
+	PIMAGE_DOS_HEADER		pImageDosHeader;
+	PIMAGE_NT_HEADERS		pImageNtHeaders;
+	IMAGE_BASE_RELOCATION	*pImageBaseRelocation;
+	pImageDosHeader = (PIMAGE_DOS_HEADER)pNewImage;
+	pImageNtHeaders = (PIMAGE_NT_HEADERS)((ULONG_PTR)pNewImage + pImageDosHeader->e_lfanew);
+	
+	uRelocOffset = (ULONG_PTR)pOrigImage - pImageNtHeaders->OptionalHeader.ImageBase;
+
+	ImageDataDirectory = pImageNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
+	pImageBaseRelocation = (PIMAGE_BASE_RELOCATION)(ImageDataDirectory.VirtualAddress + (ULONG_PTR)pNewImage);
+	uRelocTableSize = ImageDataDirectory.Size;
+	while (uRelocTableSize)
+	{
+		uTypeOffsetArraySize = pImageBaseRelocation->SizeOfBlock - 
+			sizeof(IMAGE_BASE_RELOCATION) + sizeof(pImageBaseRelocation->TypeOffset)/sizeof(USHORT);
+		pwOffsetArrayAddress = pImageBaseRelocation->TypeOffset;
+		for (uIndex = 0; uIndex <uTypeOffsetArraySize; uIndex++)
+		{
+			TypeValue = pwOffsetArrayAddress[uIndex];
+			if (TypeValue>>12==IMAGE_REL_BASED_HIGHLOW)
+			{
+				uRelocAddress = (TypeValue & 0xffff) + pImageBaseRelocation->VirtualAddress + (ULONG_PTR)pNewImage;
+				if (!MmIsAddressValid((PVOID)uRelocAddress))
+				{
+					continue;
+				}
+				*(PULONG_PTR)uRelocAddress += uRelocOffset;
+			}
+		}
+		pwOffsetArrayAddress = pImageBaseRelocation->TypeOffset;
+		uRelocTableSize -= pImageBaseRelocation->SizeOfBlock;
+	}
 }
 
-NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress)
+NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress,PVOID pOrigImage)
 {
 	NTSTATUS				status;
 	HANDLE					hFile;
@@ -52,7 +94,7 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress)
 		0);
 	if (!NT_SUCCESS(status))
 	{
-		KdPrint(("ZwCreateFile:%X", status));
+		KdPrint(("ZwCreateFile Fail:%X", status));
 		return status;
 	}
 
@@ -155,9 +197,9 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress)
 			return status;
 		}
 	}
-
+	ReLocMoudle(lpVirtualPointer,pOrigImage);
+	KdPrint(("ok!"));
 	ExFreePool(pImageSectionHeader);
-	ExFreePool(lpVirtualAddress);
 	*lpVirtualAddress = lpVirtualPointer;
 	ZwClose(hFile);
 	return STATUS_SUCCESS;
@@ -165,12 +207,17 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress)
 
 NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 {
+	if (g_lpVirtualPointer)
+	{
+		ExFreePool(g_lpVirtualPointer);
+	}
 	KdPrint(("驱动卸载成功！"));
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING psRegPath)
 {
+	ReadFileToMemory(L"\\??\\C:\\Windows\\System32\\ntkrnlpa.exe",g_lpVirtualPointer,0x83C04000);
 	pDriverObject->DriverUnload = DriverUnLoad;
 	KdPrint(("驱动加载成功！"));
 	return STATUS_SUCCESS;
