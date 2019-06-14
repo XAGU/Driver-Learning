@@ -15,11 +15,8 @@ VOID ReLocMoudle(PVOID pNewImage, PVOID pOrigImage)
 	USHORT					TypeValue;
 	USHORT					*pwOffsetArrayAddress;
 	ULONG_PTR				uTypeOffsetArraySize;
-
 	ULONG_PTR				uRelocOffset;
-
 	ULONG_PTR				uRelocAddress;
-
 	IMAGE_DATA_DIRECTORY	ImageDataDirectory;
 	PIMAGE_DOS_HEADER		pImageDosHeader;
 	PIMAGE_NT_HEADERS		pImageNtHeaders;
@@ -35,14 +32,14 @@ VOID ReLocMoudle(PVOID pNewImage, PVOID pOrigImage)
 	while (uRelocTableSize)
 	{
 		uTypeOffsetArraySize = pImageBaseRelocation->SizeOfBlock - 
-			sizeof(IMAGE_BASE_RELOCATION) + sizeof(pImageBaseRelocation->TypeOffset)/sizeof(USHORT);
+			sizeof(ULONG_PTR)*2 /sizeof(USHORT);
 		pwOffsetArrayAddress = pImageBaseRelocation->TypeOffset;
 		for (uIndex = 0; uIndex <uTypeOffsetArraySize; uIndex++)
 		{
 			TypeValue = pwOffsetArrayAddress[uIndex];
 			if (TypeValue>>12==IMAGE_REL_BASED_HIGHLOW)
 			{
-				uRelocAddress = (TypeValue & 0xffff) + pImageBaseRelocation->VirtualAddress + (ULONG_PTR)pNewImage;
+				uRelocAddress = (TypeValue & 0xfff) + pImageBaseRelocation->VirtualAddress + (ULONG_PTR)pNewImage;
 				if (!MmIsAddressValid((PVOID)uRelocAddress))
 				{
 					continue;
@@ -50,8 +47,8 @@ VOID ReLocMoudle(PVOID pNewImage, PVOID pOrigImage)
 				*(PULONG_PTR)uRelocAddress += uRelocOffset;
 			}
 		}
-		pwOffsetArrayAddress = pImageBaseRelocation->TypeOffset;
 		uRelocTableSize -= pImageBaseRelocation->SizeOfBlock;
+		pImageBaseRelocation = (IMAGE_BASE_RELOCATION*)((ULONG_PTR)pImageBaseRelocation + pImageBaseRelocation->SizeOfBlock);
 	}
 }
 
@@ -97,7 +94,7 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress,PVOID pOr
 		KdPrint(("ZwCreateFile Fail:%X", status));
 		return status;
 	}
-
+	FileOffset.QuadPart = 0;
 	status = ZwReadFile(hFile,
 		NULL,
 		NULL,
@@ -136,13 +133,13 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress,PVOID pOr
 		ZwClose(hFile);
 		return status;
 	}
-	FileOffset.QuadPart += sizeof(ImageNtHeaders);
+	FileOffset.QuadPart += sizeof(IMAGE_NT_HEADERS);
 	status = ZwReadFile(hFile,
 		NULL,
 		NULL,
 		NULL,
 		&ioStatusBlock,
-		&pImageSectionHeader,
+		pImageSectionHeader,
 		sizeof(IMAGE_SECTION_HEADER)*ImageNtHeaders.FileHeader.NumberOfSections,
 		&FileOffset,
 		NULL);
@@ -153,11 +150,10 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress,PVOID pOr
 		ZwClose(hFile);
 		return status;
 	}
-
 	lpVirtualPointer = ExAllocatePool(NonPagedPool, ImageNtHeaders.OptionalHeader.SizeOfImage);
 	if (lpVirtualPointer == 0)
 	{
-		KdPrint(("Allocate lpVirtualPointer Fail:%X", status));
+		KdPrint(("Allocate lpVirtualPointer is null"));
 		ExFreePool(pImageSectionHeader);
 		ZwClose(hFile);
 		return status;
@@ -175,9 +171,9 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress,PVOID pOr
 	for (uIndex = 0; uIndex < ImageNtHeaders.FileHeader.NumberOfSections; uIndex++)
 	{
 		SecVirtualAddress = pImageSectionHeader[uIndex].VirtualAddress;
-		PointerToRawData = pImageSectionHeader[uIndex].PointerToRawData;
 		SizeOfSection = __Max(pImageSectionHeader[uIndex].SizeOfRawData,
 			pImageSectionHeader[uIndex].Misc.VirtualSize);
+		PointerToRawData = pImageSectionHeader[uIndex].PointerToRawData;
 		FileOffset.QuadPart = PointerToRawData;
 		status = ZwReadFile(hFile,
 			NULL,
@@ -188,7 +184,7 @@ NTSTATUS ReadFileToMemory(wchar_t *strFileName,PVOID *lpVirtualAddress,PVOID pOr
 			SizeOfSection,
 			&FileOffset,
 			NULL);
-		if (NT_SUCCESS(status))
+		if (!NT_SUCCESS(status))
 		{
 			KdPrint(("Read Fail is pImageSectionHeader[%d]", uIndex));
 			ExFreePool(pImageSectionHeader);
@@ -217,7 +213,8 @@ NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING psRegPath)
 {
-	ReadFileToMemory(L"\\??\\C:\\Windows\\System32\\ntkrnlpa.exe",g_lpVirtualPointer,0x83C04000);
+	ReadFileToMemory(L"\\??\\C:\\Windows\\System32\\ntkrnlpa.exe",&g_lpVirtualPointer,0x83C4F000);
+	KdPrint(("g_lpVirtualPointer:%X", g_lpVirtualPointer));
 	pDriverObject->DriverUnload = DriverUnLoad;
 	KdPrint(("驱动加载成功！"));
 	return STATUS_SUCCESS;
