@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.572
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Driver1", "KMDF Driver1\KMDF Driver1.vcxproj", "{76FB8762-DB32-4D51-BBE6-B64C50098FB1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyFirstDriver", "KMDF Driver1\KMDF Driver1.vcxproj", "{76FB8762-DB32-4D51-BBE6-B64C50098FB1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Driver2", "Driver_two\Driver_two.vcxproj", "{E6B746DD-BFA5-46E0-A4BF-74477F28CB6C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InterceptDriverIO", "Driver_two\Driver_two.vcxproj", "{E6B746DD-BFA5-46E0-A4BF-74477F28CB6C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Driver3", "Driver3\Driver3.vcxproj", "{E2BE6114-965B-40E7-B0BE-58F38E082269}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EnumDrivers", "Driver3\Driver3.vcxproj", "{E2BE6114-965B-40E7-B0BE-58F38E082269}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Driver4", "Driver4\Driver4.vcxproj", "{0B3F2D78-538D-4923-A3F2-69B5E8939A33}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KernelCreateFile", "Driver4\Driver4.vcxproj", "{0B3F2D78-538D-4923-A3F2-69B5E8939A33}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Regedit_Key", "Regedit_Key\Regedit_Key.vcxproj", "{5891ACEF-9478-4572-92DC-D1732691BE0F}"
 EndProject
@@ -26,6 +26,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestPE", "TestPE\TestPE.vcxproj", "{D490E742-7993-4B56-B568-90CAED244E86}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReloadKernel", "ReloadKernel\ReloadKernel.vcxproj", "{BBC327B4-F05F-4F96-BC7C-1615DF224783}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EnumIDT", "EnumIDT\EnumIDT.vcxproj", "{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -303,6 +305,30 @@ Global
 		{BBC327B4-F05F-4F96-BC7C-1615DF224783}.Release|x86.ActiveCfg = Release|Win32
 		{BBC327B4-F05F-4F96-BC7C-1615DF224783}.Release|x86.Build.0 = Release|Win32
 		{BBC327B4-F05F-4F96-BC7C-1615DF224783}.Release|x86.Deploy.0 = Release|Win32
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|ARM.ActiveCfg = Debug|ARM
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|ARM.Build.0 = Debug|ARM
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|ARM.Deploy.0 = Debug|ARM
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|ARM64.Build.0 = Debug|ARM64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|x64.ActiveCfg = Debug|x64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|x64.Build.0 = Debug|x64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|x64.Deploy.0 = Debug|x64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|x86.ActiveCfg = Debug|Win32
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|x86.Build.0 = Debug|Win32
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Debug|x86.Deploy.0 = Debug|Win32
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|ARM.ActiveCfg = Release|ARM
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|ARM.Build.0 = Release|ARM
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|ARM.Deploy.0 = Release|ARM
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|ARM64.ActiveCfg = Release|ARM64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|ARM64.Build.0 = Release|ARM64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|ARM64.Deploy.0 = Release|ARM64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|x64.ActiveCfg = Release|x64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|x64.Build.0 = Release|x64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|x64.Deploy.0 = Release|x64
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|x86.ActiveCfg = Release|Win32
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|x86.Build.0 = Release|Win32
+		{2CE19CDF-78D0-4796-81CF-2F3EFC0A9602}.Release|x86.Deploy.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
