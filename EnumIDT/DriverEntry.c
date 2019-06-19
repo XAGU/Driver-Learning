@@ -40,6 +40,31 @@ VOID EnumIDT()
 	}
 }
 
+BOOLEAN HookInterrupt()
+{
+	ULONG_PTR			u_fnKeSetTimeIncrement;
+	UNICODE_STRING		usFileName;
+	ULONG_PTR			u_index;
+	ULONG_PTR			*u_KiProcessorBlock;
+
+	IDTENTRY			*pIdtEntry;
+	RtlInitUnicodeString(&usFileName, L"KeSetTimeIncrement");
+	u_fnKeSetTimeIncrement = (ULONG_PTR)MmGetSystemRoutineAddress(&usFileName);
+	if (!MmIsAddressValid((PVOID)u_fnKeSetTimeIncrement))
+	{
+		return FALSE;
+	}
+	u_KiProcessorBlock = *(ULONG_PTR**)(u_fnKeSetTimeIncrement + 44);
+	u_index = 0;
+	while (u_KiProcessorBlock[u_index])
+	{
+		pIdtEntry = (PIDTENTRY)u_KiProcessorBlock[u_index] - 0xE8;
+		KdPrint(("pIdtEntry:%X", pIdtEntry));
+		u_index++;
+	}
+	return TRUE;
+}
+
 NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 {
 	KdPrint(("驱动卸载成功！"));
@@ -49,7 +74,8 @@ NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 {
 	KdPrint(("驱动加载成功！"));
-	EnumIDT();
+	//EnumIDT();
+	HookInterrupt();
 	pDriverObject->DriverUnload = DriverUnLoad;
 	return STATUS_SUCCESS;
 }
