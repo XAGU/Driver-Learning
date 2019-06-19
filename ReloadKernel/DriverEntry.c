@@ -67,7 +67,7 @@ ULONG_PTR g_NewKernelInc;
 ServiceDescriptorTableEntry_t *g_pNewServiceTable;
 
 //关闭页只读保护
-void _declspec(naked) OnPageProtect()
+void _declspec(naked) OffPageProtect()
 {
 	__asm
 	{
@@ -81,7 +81,7 @@ void _declspec(naked) OnPageProtect()
 }
 
 //开启页只读保护
-void _declspec(naked) OffPageProtect()
+void _declspec(naked) OnPageProtect()
 {
 	__asm
 	{

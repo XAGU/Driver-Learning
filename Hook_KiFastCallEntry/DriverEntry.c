@@ -32,7 +32,7 @@ UCHAR KEYCODE[5] = { 0x2b, 0xe1, 0xc1, 0xe9, 0x02 };
 
 
 //关闭页只读保护
-void _declspec(naked) OnPageProtect()
+void _declspec(naked) OffPageProtect()
 {
 	__asm
 	{
@@ -46,7 +46,7 @@ void _declspec(naked) OnPageProtect()
 }
 
 //开启页只读保护
-void _declspec(naked) OffPageProtect()
+void _declspec(naked) OnPageProtect()
 {
 	__asm
 	{
