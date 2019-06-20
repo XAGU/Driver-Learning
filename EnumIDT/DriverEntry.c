@@ -28,6 +28,33 @@ typedef struct _IDTENTRY
 	unsigned short HiOffset;       //isr高位地址
 } IDTENTRY, *PIDTENTRY;
 
+typedef struct _KGDTENTRY {   //gdt表的元素的结构里
+	USHORT  LimitLow;
+	USHORT  BaseLow;
+	union {
+		struct {
+			UCHAR   BaseMid;
+			UCHAR   Flags1;     // Declare as bytes to avoid alignment
+			UCHAR   Flags2;     // Problems.
+			UCHAR   BaseHi;
+		} Bytes;
+		struct {
+			ULONG   BaseMid : 8;
+			ULONG   Type : 5;
+			ULONG   Dpl : 2;
+			ULONG   Pres : 1;
+
+			ULONG   LimitHi : 4;
+			ULONG   Sys : 1;
+			ULONG   Reserved_0 : 1;
+			ULONG   Default_Big : 1;
+			ULONG   Granularity : 1;
+			ULONG   BaseHi : 8;
+		} Bits;
+	} HighWord;
+} KGDTENTRY, *PKGDTENTRY;
+
+
 //关闭页只读保护
 void _declspec(naked) OffPageProtect()
 {
@@ -123,6 +150,7 @@ VOID SetInterrupt(ULONG_PTR InterrupIndex, ULONG_PTR NewInterruptFunc)
 	ULONG_PTR			*u_KiProcessorBlock;
 
 	IDTENTRY			*pIdtEntry;
+	PKGDTENTRY			pGdt;
 	RtlInitUnicodeString(&usFuncName, L"KeSetTimeIncrement");
 	u_fnKeSetTimeIncrement = (ULONG_PTR)MmGetSystemRoutineAddress(&usFuncName);
 	if (!MmIsAddressValid((PVOID)u_fnKeSetTimeIncrement))
@@ -134,9 +162,12 @@ VOID SetInterrupt(ULONG_PTR InterrupIndex, ULONG_PTR NewInterruptFunc)
 	while (u_KiProcessorBlock[u_index])
 	{
 		pIdtEntry = *(IDTENTRY**)(u_KiProcessorBlock[u_index] - 0xE8);
+		//KdPrint(("GDT:%X", *(ULONG*)(u_KiProcessorBlock[u_index] - 0xE4)));
 		OffPageProtect();
 		pIdtEntry[InterrupIndex].LowOffset = (USHORT)((ULONG_PTR)NewInterruptFunc & 0xffff);
 		pIdtEntry[InterrupIndex].HiOffset = (USHORT)((ULONG_PTR)NewInterruptFunc >> 16);
+		pGdt = *(PKGDTENTRY*)(u_KiProcessorBlock[u_index] - 0xE4);
+		KdPrint(("GDT:%X--%X--%X--%X", pGdt,pGdt->BaseLow,pGdt->HighWord.Bits.BaseMid,pGdt->HighWord.Bits.BaseHi));
 		//KdPrint(("pIdtEntry:%X", pIdtEntry));
 		OnPageProtect();
 		u_index++;
@@ -152,9 +183,12 @@ NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 {
+	USHORT u_cs;
 	KdPrint(("驱动加载成功！"));
 	//EnumIDT();
 	g_InterruptFun3 = GetInterrupt(3);
+	__asm	mov	u_cs, cs;
+	KdPrint(("u_cs:%X",u_cs));
 	SetInterrupt(3,(ULONG_PTR)NewInterruptFun3);
 	pDriverObject->DriverUnload = DriverUnLoad;
 	return STATUS_SUCCESS;
