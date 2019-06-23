@@ -85,7 +85,6 @@ VOID EnumObjectDirectory()
 		{
 			u_rear = (u_rear + 1) % MAX_OBJECT_COUNT;
 			queue[u_rear] = queue[u_front]->ChainLink;
-			
 		}
 	}
 	ExFreePool(queue);
