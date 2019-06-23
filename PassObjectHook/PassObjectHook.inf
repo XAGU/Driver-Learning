@@ -1,0 +1,86 @@
+;
+; PassObjectHook.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=PassObjectHook.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+PassObjectHook_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+PassObjectHook.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%PassObjectHook.DeviceDesc%=PassObjectHook_Device, Root\PassObjectHook ; TODO: edit hw-id
+
+[PassObjectHook_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+PassObjectHook.sys
+
+;-------------- Service installation
+[PassObjectHook_Device.NT.Services]
+AddService = PassObjectHook,%SPSVCINST_ASSOCSERVICE%, PassObjectHook_Service_Inst
+
+; -------------- PassObjectHook driver install sections
+[PassObjectHook_Service_Inst]
+DisplayName    = %PassObjectHook.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\PassObjectHook.sys
+
+;
+;--- PassObjectHook_Device Coinstaller installation ------
+;
+
+[PassObjectHook_Device.NT.CoInstallers]
+AddReg=PassObjectHook_Device_CoInstaller_AddReg
+CopyFiles=PassObjectHook_Device_CoInstaller_CopyFiles
+
+[PassObjectHook_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[PassObjectHook_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[PassObjectHook_Device.NT.Wdf]
+KmdfService =  PassObjectHook, PassObjectHook_wdfsect
+[PassObjectHook_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "PassObjectHook Installation Disk"
+PassObjectHook.DeviceDesc = "PassObjectHook Device"
+PassObjectHook.SVCDESC = "PassObjectHook Service"
