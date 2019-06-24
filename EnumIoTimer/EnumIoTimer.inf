@@ -1,0 +1,86 @@
+;
+; EnumIoTimer.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=EnumIoTimer.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+EnumIoTimer_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+EnumIoTimer.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%EnumIoTimer.DeviceDesc%=EnumIoTimer_Device, Root\EnumIoTimer ; TODO: edit hw-id
+
+[EnumIoTimer_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+EnumIoTimer.sys
+
+;-------------- Service installation
+[EnumIoTimer_Device.NT.Services]
+AddService = EnumIoTimer,%SPSVCINST_ASSOCSERVICE%, EnumIoTimer_Service_Inst
+
+; -------------- EnumIoTimer driver install sections
+[EnumIoTimer_Service_Inst]
+DisplayName    = %EnumIoTimer.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\EnumIoTimer.sys
+
+;
+;--- EnumIoTimer_Device Coinstaller installation ------
+;
+
+[EnumIoTimer_Device.NT.CoInstallers]
+AddReg=EnumIoTimer_Device_CoInstaller_AddReg
+CopyFiles=EnumIoTimer_Device_CoInstaller_CopyFiles
+
+[EnumIoTimer_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[EnumIoTimer_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[EnumIoTimer_Device.NT.Wdf]
+KmdfService =  EnumIoTimer, EnumIoTimer_wdfsect
+[EnumIoTimer_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "EnumIoTimer Installation Disk"
+EnumIoTimer.DeviceDesc = "EnumIoTimer Device"
+EnumIoTimer.SVCDESC = "EnumIoTimer Service"
