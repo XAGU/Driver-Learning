@@ -73,22 +73,19 @@ VOID DeleteIoTimer(PDEVICE_OBJECT pDeviceObject)
 
 VOID EnumIoTimer(PIO_TIMER IoTimer)
 {
-	__asm int 3;
-	PIO_TIMER pIOTimerp;
+	PIO_TIMER pIOTimerp = IoTimer;
 	PDEVICE_OBJECT pTimerDevice;
-	pIOTimerp = (PIO_TIMER)(IoTimer->TimerList.Blink - 0x4);
-	while (pIOTimerp !=IoTimer)
+	UNICODE_STRING usDriverName;
+	do
 	{
+		pIOTimerp = (PIO_TIMER)((ULONG_PTR)pIOTimerp->TimerList.Blink - 0x4);
 		if (pIOTimerp->DeviceObject!=0)
 		{
 			pTimerDevice = pIOTimerp->DeviceObject;
-			if (pTimerDevice->DriverObject!=0)
-			{
-				KdPrint(("Name:%wZ", pTimerDevice->DriverObject->DriverName));
-			}
+			usDriverName = pTimerDevice->DriverObject->DriverName;
+			KdPrint(("Name:%wZ",&usDriverName));
 		}
-		pIOTimerp = (PIO_TIMER)(pIOTimerp->TimerList.Blink - 0x4);
-	}
+	} while (pIOTimerp != IoTimer);
 }
 
 NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
