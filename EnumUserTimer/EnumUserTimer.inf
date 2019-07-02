@@ -1,0 +1,86 @@
+;
+; EnumUserTimer.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=EnumUserTimer.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+EnumUserTimer_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+EnumUserTimer.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%EnumUserTimer.DeviceDesc%=EnumUserTimer_Device, Root\EnumUserTimer ; TODO: edit hw-id
+
+[EnumUserTimer_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+EnumUserTimer.sys
+
+;-------------- Service installation
+[EnumUserTimer_Device.NT.Services]
+AddService = EnumUserTimer,%SPSVCINST_ASSOCSERVICE%, EnumUserTimer_Service_Inst
+
+; -------------- EnumUserTimer driver install sections
+[EnumUserTimer_Service_Inst]
+DisplayName    = %EnumUserTimer.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\EnumUserTimer.sys
+
+;
+;--- EnumUserTimer_Device Coinstaller installation ------
+;
+
+[EnumUserTimer_Device.NT.CoInstallers]
+AddReg=EnumUserTimer_Device_CoInstaller_AddReg
+CopyFiles=EnumUserTimer_Device_CoInstaller_CopyFiles
+
+[EnumUserTimer_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[EnumUserTimer_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[EnumUserTimer_Device.NT.Wdf]
+KmdfService =  EnumUserTimer, EnumUserTimer_wdfsect
+[EnumUserTimer_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "EnumUserTimer Installation Disk"
+EnumUserTimer.DeviceDesc = "EnumUserTimer Device"
+EnumUserTimer.SVCDESC = "EnumUserTimer Service"
