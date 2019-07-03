@@ -19,29 +19,60 @@ typedef struct _User_Timer
 	ULONG_PTR	UNKNOWN5;
 	LIST_ENTRY	List_UnKnow1;
 	LIST_ENTRY	List_UserTimer;
-};
+}User_timer,*pUser_Timer;
 
 typedef VOID (*KEATTACHPROCESS)(PRKPROCESS Process);
 typedef VOID (*KEDETACHPROCESS)();
 
 
 //global
-KEATTACHPROCESS KeAttachProcess;
-KEDETACHPROCESS KeDetachProcess;
-ULONG_PTR		gtmrListHead;
+KEATTACHPROCESS KeAttachProcesss;
+KEDETACHPROCESS KeDetachProcesss;
+PLIST_ENTRY		gtmrListHead;
 
-VOID InitalizeData()
+
+
+BOOLEAN InitalizeData()
 {
 	UNICODE_STRING str_Func1, str_Func2;
 	RtlInitUnicodeString(&str_Func1, L"KeAttachProcess");
 	RtlInitUnicodeString(&str_Func2, L"KeDetachProcess");
-	KeAttachProcess = (KEATTACHPROCESS)MmGetSystemRoutineAddress(&str_Func1);
-	KeDetachProcess = (KEDETACHPROCESS)MmGetSystemRoutineAddress(&str_Func2);
+	KeAttachProcesss = (KEATTACHPROCESS)MmGetSystemRoutineAddress(&str_Func1);
+	KeDetachProcesss = (KEDETACHPROCESS)MmGetSystemRoutineAddress(&str_Func2);
 	if (!MmIsAddressValid(KeAttachProcess)||!MmIsAddressValid(KeDetachProcess))
 	{
 		return FALSE;
 	}
-	gtmrListHead = 0xffffffff
+	gtmrListHead = (PLIST_ENTRY)0x94990b50;
+	return TRUE;
+}
+
+VOID SerchUserTimer()
+{
+	PLIST_ENTRY pListNext;
+	pUser_Timer pTimer;
+	PKPROCESS	AttachProcess;
+	if (!InitalizeData())
+	{
+		return;
+	}
+	AttachProcess = (PKPROCESS)0x882efb20;
+	KeAttachProcesss(AttachProcess);
+	__try {
+		pListNext = gtmrListHead->Flink;
+		while (pListNext != gtmrListHead)
+		{
+			pTimer = CONTAINING_RECORD(pListNext, User_timer, gList);
+			KdPrint(("Timer:0x%X\t\t\t\t\t\tTimerID:%8d\t\t\t\t\t\tlpTimerFunc:0x%8X\t\t\t\t\t\tuElapse:%d",
+				pTimer, pTimer->TimerId, pTimer->lpTimerFunc, pTimer->uElapse));
+			pListNext = pListNext->Flink;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+	//
+	}
+	KeDetachProcesss(AttachProcess);
 
 }
 
@@ -56,5 +87,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 {
 	pDriverObject->DriverUnload = DriverUnLoad;
 	KdPrint(("驱动加载成功！"));
+	SerchUserTimer();
 	return STATUS_SUCCESS;
 }
