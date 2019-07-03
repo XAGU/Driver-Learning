@@ -90,6 +90,7 @@ typedef NTSTATUS (*ZWQUERYSYSTEMINFORMATINON)(
 	_Out_opt_ PULONG                   ReturnLength
 );
 
+
 VOID EnumProcess()
 {
 	NTSTATUS status;
@@ -143,6 +144,88 @@ VOID EnumProcess()
 }
 
 
+VOID EnumProcessByLinks()
+{
+	PLIST_ENTRY		plist_head,plist;
+	ULONG_PTR		eprocess;
+	eprocess = (ULONG_PTR)PsGetCurrentProcess();
+	plist_head = (PLIST_ENTRY)(eprocess + 0xb8);
+	plist = plist_head;
+	while (plist->Flink != plist_head)
+	{
+		eprocess = (ULONG_PTR)plist - 0xb8;
+		KdPrint(("%s", eprocess + 0x16c));
+		plist = plist->Flink;
+	}
+}
+
+VOID EnumProcessByWindows()
+{
+	NTSTATUS		status;
+	PEPROCESS		gui_process;
+	ULONG_PTR		win32_process,tag_desk_top,tag_desk_info,tag_desk_wnd,tagwnd;
+	ULONG_PTR		tag_thread_info,ethread, eprocess;
+	status = PsLookupProcessByProcessId((HANDLE)1312, &gui_process);
+	if (!NT_SUCCESS(status))
+	{
+		return;
+	}
+	KeAttachProcess(gui_process);
+	do
+	{
+		win32_process = *(ULONG_PTR*)((ULONG_PTR)gui_process + 0x120);
+		if (win32_process == 0)
+		{
+			break;
+		}
+		tag_desk_top = *(ULONG_PTR*)(win32_process + 0x98);
+		if (tag_desk_top == 0)
+		{
+			break;
+		}
+		tag_desk_info = *(ULONG_PTR*)(tag_desk_top + 0x4);
+		if (tag_desk_info == 0)
+		{
+			break;
+		}
+		tag_desk_wnd = *(ULONG_PTR*)(tag_desk_info + 0x8);
+		if (tag_desk_wnd == 0)
+		{
+			break;
+		}
+		tagwnd = *(ULONG_PTR*)(tag_desk_wnd + 0x38);
+		while (tagwnd)
+		{
+			tag_thread_info = *(ULONG_PTR*)(tagwnd + 0x8);
+
+			if (tag_thread_info==0)
+			{
+				tagwnd = *(ULONG_PTR*)(tagwnd + 0x2c);
+				continue;
+			}
+
+			ethread = *(ULONG_PTR*)tag_thread_info;
+			if (ethread==0)
+			{
+				tagwnd = *(ULONG_PTR*)(tagwnd + 0x2c);
+				continue;
+			}
+			eprocess = *(ULONG_PTR*)(ethread + 0x150);
+			if (eprocess==0)
+			{
+				tagwnd = *(ULONG_PTR*)(tagwnd + 0x2c);
+				continue;
+			}
+			KdPrint(("%s", eprocess + 0x16c));
+			tagwnd = *(ULONG_PTR*)(tagwnd + 0x2c);
+		}
+	} while (0);
+
+	KeDetachProcess();
+
+	ObDereferenceObject(gui_process);
+}
+
 NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 {
 	KdPrint(("驱动卸载成功！"));
@@ -151,7 +234,9 @@ NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 {
-	EnumProcess();
+	//EnumProcess();
+	//EnumProcessByLinks();
+	EnumProcessByWindows();
 	pDriverObject->DriverUnload = DriverUnLoad;
 	KdPrint(("驱动加载成功！"));
 	return STATUS_SUCCESS;
