@@ -134,6 +134,7 @@ ULONG_PTR GetNewBase(ULONG_PTR NewInterruptFunc, ULONG_PTR OrigInterruptFunc)
 
 VOID SetInterrupt(ULONG_PTR InterrupIndex, ULONG_PTR uNewBase,BOOLEAN bisNew)
 {
+	ULONG_PTR			uGdtSub = 21;
 	ULONG_PTR			u_fnKeSetTimeIncrement;
 	UNICODE_STRING		usFuncName;
 	ULONG_PTR			u_index;
@@ -157,16 +158,16 @@ VOID SetInterrupt(ULONG_PTR InterrupIndex, ULONG_PTR uNewBase,BOOLEAN bisNew)
 		if (bisNew)
 		{
 			
-			pIdtEntry[InterrupIndex].selector = 0xA8;
-			RtlCopyMemory(&pGdt[21], &pGdt[1],sizeof(KGDTENTRY));
-			pGdt[21].BaseLow = (USHORT)(uNewBase & 0xffff);
-			pGdt[21].HighWord.Bytes.BaseMid = (UCHAR)((uNewBase >> 16) & 0xffff);
-			pGdt[21].HighWord.Bytes.BaseHi = (UCHAR)(uNewBase >> 24);
+			pIdtEntry[InterrupIndex].selector = (SHORT)uGdtSub*0x8;
+			RtlCopyMemory(&pGdt[uGdtSub], &pGdt[1],sizeof(KGDTENTRY));
+			pGdt[uGdtSub].BaseLow = (USHORT)(uNewBase & 0xffff);
+			pGdt[uGdtSub].HighWord.Bytes.BaseMid = (UCHAR)((uNewBase >> 16) & 0xffff);
+			pGdt[uGdtSub].HighWord.Bytes.BaseHi = (UCHAR)(uNewBase >> 24);
 		}
 		else
 		{
 			pIdtEntry[InterrupIndex].selector = 0x8;
-			memset(&pGdt[21], 0, sizeof(KGDTENTRY));
+			memset(&pGdt[uGdtSub], 0, sizeof(KGDTENTRY));
 		}
 		OnPageProtect();
 		u_index++;
