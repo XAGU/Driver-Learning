@@ -235,8 +235,8 @@ NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 {
 	//EnumProcess();
-	//EnumProcessByLinks();
-	EnumProcessByWindows();
+	EnumProcessByLinks();
+	//EnumProcessByWindows();
 	pDriverObject->DriverUnload = DriverUnLoad;
 	KdPrint(("驱动加载成功！"));
 	return STATUS_SUCCESS;

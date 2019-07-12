@@ -170,6 +170,8 @@ NTSTATUS DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 	return STATUS_SUCCESS;
 }
 
+
+
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 {
 	PassObjectHook();
