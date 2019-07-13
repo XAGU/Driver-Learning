@@ -1,0 +1,86 @@
+;
+; KeyBoardFiliter.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=KeyBoardFiliter.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+KeyBoardFiliter_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+KeyBoardFiliter.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%KeyBoardFiliter.DeviceDesc%=KeyBoardFiliter_Device, Root\KeyBoardFiliter ; TODO: edit hw-id
+
+[KeyBoardFiliter_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+KeyBoardFiliter.sys
+
+;-------------- Service installation
+[KeyBoardFiliter_Device.NT.Services]
+AddService = KeyBoardFiliter,%SPSVCINST_ASSOCSERVICE%, KeyBoardFiliter_Service_Inst
+
+; -------------- KeyBoardFiliter driver install sections
+[KeyBoardFiliter_Service_Inst]
+DisplayName    = %KeyBoardFiliter.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\KeyBoardFiliter.sys
+
+;
+;--- KeyBoardFiliter_Device Coinstaller installation ------
+;
+
+[KeyBoardFiliter_Device.NT.CoInstallers]
+AddReg=KeyBoardFiliter_Device_CoInstaller_AddReg
+CopyFiles=KeyBoardFiliter_Device_CoInstaller_CopyFiles
+
+[KeyBoardFiliter_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[KeyBoardFiliter_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[KeyBoardFiliter_Device.NT.Wdf]
+KmdfService =  KeyBoardFiliter, KeyBoardFiliter_wdfsect
+[KeyBoardFiliter_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "KeyBoardFiliter Installation Disk"
+KeyBoardFiliter.DeviceDesc = "KeyBoardFiliter Device"
+KeyBoardFiliter.SVCDESC = "KeyBoardFiliter Service"
