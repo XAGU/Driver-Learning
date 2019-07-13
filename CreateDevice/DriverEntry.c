@@ -1,8 +1,4 @@
-#include <ntifs.h>
-
-
-#define DEV_NAME L"\\Device\\MyDevice"
-#define SYM_LINK_NAME L"\\??\\MySymLink"
+#include "Common.h"
 
 NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 {

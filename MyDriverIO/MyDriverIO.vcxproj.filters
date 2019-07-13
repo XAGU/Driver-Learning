@@ -19,7 +19,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="CreateDevice.inf">
+    <Inf Include="MyDriverIO.inf">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>
