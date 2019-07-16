@@ -20,11 +20,12 @@ typedef struct WRIO
 	BOOLEAN		IsRead;
 	size_t		Length;
 	BOOLEAN		Status;
-}WRIO;
+}WRIO, *PWRIO;
 
-UCHAR Buffer[1024];
+KEVENT kEvent,kEvent2;
 
-WRIO IO = { 0,0,0,0 };
+PVOID pIoBuffer;
+
 
 #define DONT_HAVE_THREAD 0;
 #define HAVE_THREAD 1

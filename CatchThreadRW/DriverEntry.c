@@ -1,11 +1,5 @@
 #include "Common.h"
 
-VOID R0_Sleep(int milliSeconds)
-{
-	LARGE_INTEGER		interval;
-	interval.QuadPart = (__int64)milliSeconds * -1;
-	KeDelayExecutionThread(KernelMode, FALSE, &interval);
-}
 
 NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 {
@@ -40,6 +34,11 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 	{
 		return;
 	}
+	if (bDieTherad == EXIT_THREAD)
+	{
+		KePulseEvent(&kEvent, 0, FALSE);
+		return;
+	}
 	if (Create == 0)
 	{ //Create 等于0 代表结束 
 		PsLookupProcessByProcessId(ProcessId, &p_Process);
@@ -49,28 +48,26 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 			KdPrint(("当前线程ID:%d,死亡线程ID:%d,所属进程ID:%d,进程名称:%s\n", PsGetCurrentThreadId(), ThreadId, ProcessId, PsGetProcessImageFileName(p_Process)));
 			while (TRUE)
 			{
+				KeWaitForSingleObject(&kEvent, Executive, KernelMode, FALSE, NULL);
 				if (bDieTherad == EXIT_THREAD)
 				{
+					KePulseEvent(&kEvent2, 0, FALSE);
 					return;
 				}
-				if (IO.Address == 0)
-				{
-					KdPrint(("not Read\n"));
-					R0_Sleep(1);
-					continue;
-				}
-				if (IO.IsRead)
+				if (((PWRIO)pIoBuffer)->IsRead)
 				{
 					//读
 					__try
 					{
-						ProbeForRead((PVOID)IO.Address, IO.Length, 4);
-						RtlCopyMemory(&Buffer, (ULONG_PTR*)IO.Address, IO.Length);
+						KdPrint(("reading"));
+						ProbeForRead((PVOID)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length, 1);
+						RtlCopyMemory(pIoBuffer, (ULONG_PTR*)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length);
 					}
 					__except (EXCEPTION_EXECUTE_HANDLER)
 					{
 						KdPrint(("read except\n"));
-						IO.Status = FALSE;
+						((PWRIO)pIoBuffer)->Status = FALSE;
+						KePulseEvent(&kEvent2, 0, FALSE);
 						continue;
 					}
 				}
@@ -79,17 +76,19 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 					//写
 					__try
 					{
-						ProbeForWrite((PVOID)IO.Address, IO.Length, 4);
-						RtlCopyMemory((ULONG_PTR*)IO.Address, &Buffer, IO.Length);
+						ProbeForWrite((PVOID)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length, 1);
+						RtlCopyMemory((ULONG_PTR*)(((PWRIO)pIoBuffer)->Address), pIoBuffer, ((PWRIO)pIoBuffer)->Length);
 					}
 					__except (EXCEPTION_EXECUTE_HANDLER)
 					{
 						KdPrint(("write except\n"));
-						IO.Status = FALSE;
+						((PWRIO)pIoBuffer)->Status = FALSE;
+						KePulseEvent(&kEvent, 0, FALSE);
 						continue;
 					}
 				}
-				IO.Status = TRUE;
+				((PWRIO)pIoBuffer)->Status = TRUE;
+				KePulseEvent(&kEvent2, 0, FALSE);
 			}
 		}
 	}
@@ -103,27 +102,21 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	ULONG_PTR InLength = IrpStack->Parameters.DeviceIoControl.InputBufferLength;
 	ULONG_PTR OutLength = IrpStack->Parameters.DeviceIoControl.OutputBufferLength;
 	ULONG_PTR IoControlCode = IrpStack->Parameters.DeviceIoControl.IoControlCode;
-	PVOID pIoBuffer = pIrp->AssociatedIrp.SystemBuffer;
+	pIoBuffer = pIrp->AssociatedIrp.SystemBuffer;
 	ULONG_PTR info;
 	switch (IoControlCode)
 	{
 	case IOCTL_READ:
 	{
 		KdPrint(("IOCTL_READ"));
-		RtlCopyMemory(&IO, pIoBuffer, InLength);
-		while (IO.Status == FALSE)
-		{
-			R0_Sleep(1);
-		}
-		RtlCopyMemory(pIoBuffer, &Buffer, OutLength);
+		KePulseEvent(&kEvent, 0, FALSE);
+		KeWaitForSingleObject(&kEvent2, Executive, KernelMode, FALSE, NULL);
 		info = OutLength;
-		memset(&IO, 0, sizeof(WRIO));
 	}
 	break;
 	case IOCTL_WRITE:
 	{
 		KdPrint(("IOCTL_WRITE"));
-		IO = *(WRIO*)pIoBuffer;
 		info = OutLength;
 	}
 	break;
@@ -172,7 +165,8 @@ VOID SetDispatchFunction(PDRIVER_OBJECT pDriverObject)
 VOID DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 {
 	bDieTherad = EXIT_THREAD;
-	R0_Sleep(200);
+	KePulseEvent(&kEvent, 0, FALSE);
+	KeWaitForSingleObject(&kEvent, Executive, KernelMode, FALSE, NULL);
 	PsRemoveCreateThreadNotifyRoutine(CreateThreadNotifyRoutine);
 	UNICODE_STRING	usSymName;
 	RtlInitUnicodeString(&usSymName, SYM_LINK_NAME);
@@ -201,6 +195,9 @@ DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 	}
 	PsSetCreateThreadNotifyRoutine(CreateThreadNotifyRoutine);
 	SetDispatchFunction(pDriverObject);
+	//初始化同步事件
+	KeInitializeEvent(&kEvent, NotificationEvent, FALSE);
+	KeInitializeEvent(&kEvent2, NotificationEvent, FALSE);
 	pDriverObject->DriverUnload = DriverUnLoad;
 	KdPrint(("驱动加载成功！"));
 	return STATUS_SUCCESS;
