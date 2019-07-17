@@ -27,17 +27,22 @@ int main()
 	WRIO InputBuffer = {0};
 	UCHAR OutputBuffer[128] = {0};
 	BOOL bRet;
+	int times;
 	while (true)
 	{
+		//7FF73D3C0000
 		InputBuffer.IsRead = TRUE;
 		printf("请输入要读取的地址 ：");
 		scanf_s("%I64X", &InputBuffer.Address);
 		printf("请输入要读取的大小 ：");
 		scanf_s("%X", &InputBuffer.Length);
+		printf("请输入要读取次数 ：");
+		scanf_s("%d", &times);
 		HANDLE hDevice = CreateFile(L"\\\\.\\MySymLink",
 			GENERIC_READ | GENERIC_WRITE,
 			0,
-			NULL, OPEN_EXISTING,
+			NULL, 
+			OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL,
 			NULL
 		);
@@ -48,7 +53,7 @@ int main()
 		}
 		//读取数据
 		DWORD_PTR start = GetTickCount();
-		for (size_t i = 0; i < 1000; i++)
+		for (size_t i = 0; i < times; i++)
 		{
 			//InputBuffer.Address += i*2;
 			bRet = DeviceIoControl(hDevice, IOCTL_READ, &InputBuffer, sizeof(WRIO), OutputBuffer, InputBuffer.Length, &dwRet, NULL);

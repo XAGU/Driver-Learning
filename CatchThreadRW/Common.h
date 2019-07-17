@@ -22,7 +22,7 @@ typedef struct WRIO
 	BOOLEAN		Status;
 }WRIO, *PWRIO;
 
-KEVENT kEvent,kEvent2;
+PKEVENT kEvent;
 
 PVOID pIoBuffer;
 
