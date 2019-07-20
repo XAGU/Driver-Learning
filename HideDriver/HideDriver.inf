@@ -1,0 +1,86 @@
+;
+; HideDriver.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=HideDriver.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+HideDriver_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+HideDriver.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%HideDriver.DeviceDesc%=HideDriver_Device, Root\HideDriver ; TODO: edit hw-id
+
+[HideDriver_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+HideDriver.sys
+
+;-------------- Service installation
+[HideDriver_Device.NT.Services]
+AddService = HideDriver,%SPSVCINST_ASSOCSERVICE%, HideDriver_Service_Inst
+
+; -------------- HideDriver driver install sections
+[HideDriver_Service_Inst]
+DisplayName    = %HideDriver.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\HideDriver.sys
+
+;
+;--- HideDriver_Device Coinstaller installation ------
+;
+
+[HideDriver_Device.NT.CoInstallers]
+AddReg=HideDriver_Device_CoInstaller_AddReg
+CopyFiles=HideDriver_Device_CoInstaller_CopyFiles
+
+[HideDriver_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[HideDriver_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[HideDriver_Device.NT.Wdf]
+KmdfService =  HideDriver, HideDriver_wdfsect
+[HideDriver_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "HideDriver Installation Disk"
+HideDriver.DeviceDesc = "HideDriver Device"
+HideDriver.SVCDESC = "HideDriver Service"

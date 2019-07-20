@@ -1,5 +1,23 @@
 #include "Common.h"
 
+KIRQL  WPOFFx64()
+{
+	KIRQL  irql = KeRaiseIrqlToDpcLevel();
+	UINT64  cr0 = __readcr0();
+	cr0 &= 0xfffffffffffeffff;
+	__writecr0(cr0);
+	_disable();
+	return  irql;
+}
+
+void  WPONx64(KIRQL  irql)
+{
+	UINT64  cr0 = __readcr0();
+	cr0 |= 0x10000;
+	_enable();
+	__writecr0(cr0);
+	KeLowerIrql(irql);
+}
 
 NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 {
@@ -11,7 +29,7 @@ NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 	Status = IoCreateDevice(pDriverObject, 0, &usDeviceName, FILE_DEVICE_UNKNOWN, 0, TRUE, &MyDevice);
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("IoCreateDevice Failed !"));
+		KdPrint(("<--->IoCreateDevice Failed !"));
 		return Status;
 	}
 	MyDevice->Flags |= DO_BUFFERED_IO;
@@ -20,7 +38,7 @@ NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 	if (!NT_SUCCESS(Status))
 	{
 		IoDeleteDevice(MyDevice);
-		KdPrint(("IoCreateSymbolicLink Failed !"));
+		KdPrint(("<--->IoCreateSymbolicLink Failed !"));
 		return Status;
 	}
 	return Status;
@@ -42,10 +60,10 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 	if (Create == 0)
 	{ //Create 等于0 代表结束 
 		PsLookupProcessByProcessId(ProcessId, &p_Process);
-		if (strstr(PsGetProcessImageFileName(p_Process), "aaa.exe")!=NULL || strstr(PsGetProcessImageFileName(p_Process), "AAA.exe") != NULL)
+		if (strstr(PsGetProcessImageFileName(p_Process), "Realm.exe")!=NULL || strstr(PsGetProcessImageFileName(p_Process), "AAA.exe") != NULL)
 		{
 			bDieTherad = HAVE_THREAD;
-			KdPrint(("当前线程ID:%d,死亡线程ID:%d,所属进程ID:%d,进程名称:%s\n", PsGetCurrentThreadId(), ThreadId, ProcessId, PsGetProcessImageFileName(p_Process)));
+			KdPrint(("<--->当前线程ID:%d,PETHREAD:%X,所属进程ID:%d,进程名称:%s\n", PsGetCurrentThreadId(), p_Process, ProcessId, PsGetProcessImageFileName(p_Process)));
 			KeWaitForSingleObject(kEvent, Executive, KernelMode, FALSE, NULL);
 			while (TRUE)
 			{
@@ -59,13 +77,13 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 					//读
 					__try
 					{
-						KdPrint(("reading"));
+						KdPrint(("<--->reading"));
 						ProbeForRead((PVOID)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length, 1);
-						RtlCopyMemory(pIoBuffer, (ULONG_PTR*)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length);
+						RtlCopyMemory((PVOID)((ULONG_PTR)pIoBuffer+sizeof(WRIO)), (ULONG_PTR*)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length);
 					}
 					__except (EXCEPTION_EXECUTE_HANDLER)
 					{
-						KdPrint(("read except\n"));
+						KdPrint(("<--->read except\n"));
 						((PWRIO)pIoBuffer)->Status = FALSE;
 						KeSetEvent(kEvent, 0, TRUE);
 						KeWaitForSingleObject(kEvent, Executive, KernelMode, FALSE, NULL);
@@ -77,12 +95,15 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 					//写
 					__try
 					{
+						KdPrint(("<--->Writeing"));
+						KIRQL irql = WPOFFx64();
 						ProbeForWrite((PVOID)((PWRIO)pIoBuffer)->Address, ((PWRIO)pIoBuffer)->Length, 1);
-						RtlCopyMemory((ULONG_PTR*)(((PWRIO)pIoBuffer)->Address), pIoBuffer, ((PWRIO)pIoBuffer)->Length);
+						RtlCopyMemory((ULONG_PTR*)(((PWRIO)pIoBuffer)->Address), (PVOID)((ULONG_PTR)pIoBuffer + sizeof(WRIO)), ((PWRIO)pIoBuffer)->Length);
+						WPONx64(irql);
 					}
 					__except (EXCEPTION_EXECUTE_HANDLER)
 					{
-						KdPrint(("write except\n"));
+						KdPrint(("<--->write except\n"));
 						((PWRIO)pIoBuffer)->Status = FALSE;
 						KeSetEvent(kEvent, 0, TRUE);
 						KeWaitForSingleObject(kEvent, Executive, KernelMode, FALSE, NULL);
@@ -111,7 +132,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	{
 	case IOCTL_READ:
 	{
-		KdPrint(("IOCTL_READ"));
+		KdPrint(("<--->IOCTL_READ"));
 		KeSetEvent(kEvent, 0, TRUE);
 		KeWaitForSingleObject(kEvent, Executive, KernelMode, FALSE, NULL);
 		info = OutLength;
@@ -119,21 +140,23 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	break;
 	case IOCTL_WRITE:
 	{
-		KdPrint(("IOCTL_WRITE"));
+		KdPrint(("<--->IOCTL_WRITE"));
+		KeSetEvent(kEvent, 0, TRUE);
+		KeWaitForSingleObject(kEvent, Executive, KernelMode, FALSE, NULL);
 		info = OutLength;
 	}
 	break;
 	case IOCTL_GETPID:
 	{
-		KdPrint(("IOCTL_GETPID"));
+		KdPrint(("<--->IOCTL_GETPID"));
 		HANDLE Pid;
 		Pid = *(HANDLE*)pIoBuffer;
-		KdPrint(("Pid: %d", Pid));
+		KdPrint(("<--->Pid: %d", Pid));
 		info = OutLength;
 	}
 	break;
 	default:
-		KdPrint(("CODE ERROR !"));
+		KdPrint(("<--->CODE ERROR !"));
 		Status = STATUS_UNSUCCESSFUL;
 		break;
 	}
@@ -179,7 +202,7 @@ VOID DriverUnLoad(PDRIVER_OBJECT pDriverObject)
 		IoDeleteDevice(pDriverObject->DeviceObject);
 	}
 	ExFreePool(kEvent);
-	KdPrint(("驱动加载成功！"));
+	KdPrint(("<--->驱动加载成功！"));
 }
 
 
@@ -190,12 +213,12 @@ DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 	Status = CreateDevice(pDriverObject);
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("创建device失败！"));
+		KdPrint(("<--->创建device失败！"));
 	}
 	else
 	{
-		KdPrint(("创建device成功！"));
-		KdPrint(("%wZ", pRegPath));
+		KdPrint(("<--->创建device成功！"));
+		KdPrint(("<--->%wZ", pRegPath));
 	}
 	PsSetCreateThreadNotifyRoutine(CreateThreadNotifyRoutine);
 	SetDispatchFunction(pDriverObject);
@@ -203,6 +226,6 @@ DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegPath)
 	kEvent = ExAllocatePool(NonPagedPool, sizeof(KEVENT));
 	KeInitializeEvent(kEvent, SynchronizationEvent, FALSE);
 	pDriverObject->DriverUnload = DriverUnLoad;
-	KdPrint(("驱动加载成功！"));
+	KdPrint(("<--->驱动加载成功！"));
 	return STATUS_SUCCESS;
 }
