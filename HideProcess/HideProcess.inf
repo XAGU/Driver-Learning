@@ -1,0 +1,86 @@
+;
+; HideProcess.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=HideProcess.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+HideProcess_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+HideProcess.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%HideProcess.DeviceDesc%=HideProcess_Device, Root\HideProcess ; TODO: edit hw-id
+
+[HideProcess_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+HideProcess.sys
+
+;-------------- Service installation
+[HideProcess_Device.NT.Services]
+AddService = HideProcess,%SPSVCINST_ASSOCSERVICE%, HideProcess_Service_Inst
+
+; -------------- HideProcess driver install sections
+[HideProcess_Service_Inst]
+DisplayName    = %HideProcess.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\HideProcess.sys
+
+;
+;--- HideProcess_Device Coinstaller installation ------
+;
+
+[HideProcess_Device.NT.CoInstallers]
+AddReg=HideProcess_Device_CoInstaller_AddReg
+CopyFiles=HideProcess_Device_CoInstaller_CopyFiles
+
+[HideProcess_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[HideProcess_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[HideProcess_Device.NT.Wdf]
+KmdfService =  HideProcess, HideProcess_wdfsect
+[HideProcess_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "HideProcess Installation Disk"
+HideProcess.DeviceDesc = "HideProcess Device"
+HideProcess.SVCDESC = "HideProcess Service"
