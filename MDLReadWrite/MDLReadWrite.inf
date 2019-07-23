@@ -1,0 +1,86 @@
+;
+; MDLReadWrite.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=MDLReadWrite.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+MDLReadWrite_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+MDLReadWrite.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%MDLReadWrite.DeviceDesc%=MDLReadWrite_Device, Root\MDLReadWrite ; TODO: edit hw-id
+
+[MDLReadWrite_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+MDLReadWrite.sys
+
+;-------------- Service installation
+[MDLReadWrite_Device.NT.Services]
+AddService = MDLReadWrite,%SPSVCINST_ASSOCSERVICE%, MDLReadWrite_Service_Inst
+
+; -------------- MDLReadWrite driver install sections
+[MDLReadWrite_Service_Inst]
+DisplayName    = %MDLReadWrite.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\MDLReadWrite.sys
+
+;
+;--- MDLReadWrite_Device Coinstaller installation ------
+;
+
+[MDLReadWrite_Device.NT.CoInstallers]
+AddReg=MDLReadWrite_Device_CoInstaller_AddReg
+CopyFiles=MDLReadWrite_Device_CoInstaller_CopyFiles
+
+[MDLReadWrite_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[MDLReadWrite_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[MDLReadWrite_Device.NT.Wdf]
+KmdfService =  MDLReadWrite, MDLReadWrite_wdfsect
+[MDLReadWrite_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "MDLReadWrite Installation Disk"
+MDLReadWrite.DeviceDesc = "MDLReadWrite Device"
+MDLReadWrite.SVCDESC = "MDLReadWrite Service"
