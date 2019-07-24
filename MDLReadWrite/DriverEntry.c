@@ -28,6 +28,7 @@ NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 
 NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 {
+	HANDLE Pid;
 	NTSTATUS Status;
 	Status = STATUS_SUCCESS;
 	PIO_STACK_LOCATION IrpStack = IoGetCurrentIrpStackLocation(pIrp);
@@ -41,7 +42,8 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	case IOCTL_INIT:
 	{
 		KdPrint(("<--->IOCTL_INIT"));
-		Status = PsLookupProcessByProcessId((HANDLE)pIoBuffer, &Process);
+		Pid = *(HANDLE*)pIoBuffer;
+		Status = PsLookupProcessByProcessId(Pid, &Process);
 		if (!NT_SUCCESS(Status))
 		{
 			KdPrint(("PsLookupProcessByProcessId Failed !"));
@@ -56,30 +58,50 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	{
 		KAPC_STATE		ApcState;
 		KdPrint(("<--->IOCTL_READ"));
-		KeStackAttachProcess(Process, &ApcState);
-		Status = ReadProcessMemory(((PWRIO)pIoBuffer)->VirtualAddress, ((PWRIO)pIoBuffer)->Length, pIoBuffer);
-		if (!NT_SUCCESS(Status))
+		if (!Process)
 		{
-			KdPrint(("<--->IOCTL_READ Failed !"));
-			KeUnstackDetachProcess(&ApcState);
 			info = 0;
 		}
-		info = OutLength;
+		else
+		{
+			KeStackAttachProcess(Process, &ApcState);
+			Status = ReadProcessMemory(((PWRIO)pIoBuffer)->VirtualAddress, ((PWRIO)pIoBuffer)->Length, pIoBuffer);
+			KeUnstackDetachProcess(&ApcState);
+			if (!NT_SUCCESS(Status))
+			{
+				KdPrint(("<--->IOCTL_READ Failed !"));
+				info = 0;
+			}
+			else
+			{
+				info = OutLength;
+			}
+		}
 	}
 	break;
 	case IOCTL_WRITE:
 	{
 		KAPC_STATE		ApcState;
 		KdPrint(("<--->IOCTL_WRITE"));
-		KeStackAttachProcess(Process, &ApcState);
-		Status = ReadProcessMemory(((PWRIO)pIoBuffer)->VirtualAddress, ((PWRIO)pIoBuffer)->Length, pIoBuffer);
-		if (!NT_SUCCESS(Status))
+		if (!Process)
 		{
-			KdPrint(("<--->IOCTL_WRITE Failed !"));
-			KeUnstackDetachProcess(&ApcState);
 			info = 0;
 		}
-		info = OutLength;
+		else
+		{
+			KeStackAttachProcess(Process, &ApcState);
+			Status = WriteProcessMemory(((PWRIO)pIoBuffer)->VirtualAddress, ((PWRIO)pIoBuffer)->Length, pIoBuffer);
+			KeUnstackDetachProcess(&ApcState);
+			if (!NT_SUCCESS(Status))
+			{
+				KdPrint(("<--->IOCTL_WRITE Failed !"));
+				info = 0;
+			}
+			else
+			{
+				info = OutLength;
+			}
+		}
 	}
 	break;
 	default:

@@ -31,7 +31,7 @@ typedef struct WRIO
 
 int main()
 {
-	ULONG_PTR Pid;
+	ULONG_PTR Pid = 0;
 	DWORD dwRet = 0;
 	UCHAR InputBuffer[200] = { 0 };
 	UCHAR OutputBuffer[200] = { 0 };
@@ -69,26 +69,27 @@ int main()
 		for (size_t i = 0; i < times; i++)
 		{
 			bRet = DeviceIoControl(hDevice, IOCTL_READ, InputBuffer, sizeof(WRIO), OutputBuffer, ((PWRIO)InputBuffer)->Length, &dwRet, NULL);
+			printf("bRet: %d---%d\n", bRet,i);
 		}
 		DWORD_PTR  end = GetTickCount();
 		printf("GetTickCount: %d\n", end - start);
 		if (bRet)
 		{
 			printf("OutPut buffer:%d Bytes !\n", dwRet);
-			for (size_t i = sizeof(WRIO); i < dwRet; i++)
+			for (size_t i = 0; i < dwRet; i++)
 			{
 				printf("字节 : %X ", OutputBuffer[i]);
 			}
 		}
 		printf("请输入要写入的数据 ：");
-		scanf_s("%X", InputBuffer + sizeof(WRIO));
+		scanf_s("%llX", InputBuffer + sizeof(WRIO));
 		//写入数据
-		bRet = DeviceIoControl(hDevice, IOCTL_WRITE, InputBuffer, sizeof(WRIO)+ ((PWRIO)InputBuffer)->Length, OutputBuffer, 0, &dwRet, NULL);
+		bRet = DeviceIoControl(hDevice, IOCTL_WRITE, InputBuffer, sizeof(WRIO)+ ((PWRIO)InputBuffer)->Length, OutputBuffer, 8, &dwRet, NULL);
 		bRet = DeviceIoControl(hDevice, IOCTL_READ, InputBuffer, sizeof(WRIO), OutputBuffer, ((PWRIO)InputBuffer)->Length, &dwRet, NULL);
 		if (bRet)
 		{
 			printf("OutPut buffer:%d Bytes !\n", dwRet);
-			for (size_t i = sizeof(WRIO); i < dwRet; i++)
+			for (size_t i = 0; i < dwRet; i++)
 			{
 				printf("字节 : %X ", OutputBuffer[i]);
 			}
