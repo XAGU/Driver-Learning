@@ -28,7 +28,6 @@ NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 
 NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 {
-	HANDLE Pid;
 	NTSTATUS Status;
 	Status = STATUS_SUCCESS;
 	PIO_STACK_LOCATION IrpStack = IoGetCurrentIrpStackLocation(pIrp);
@@ -42,8 +41,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	case IOCTL_INIT:
 	{
 		KdPrint(("<--->IOCTL_INIT"));
-		Pid = *(HANDLE*)pIoBuffer;
-		Status = PsLookupProcessByProcessId(Pid, &Process);
+		Status = PsLookupProcessByProcessId(*(HANDLE*)pIoBuffer, &Process);
 		if (!NT_SUCCESS(Status))
 		{
 			KdPrint(("PsLookupProcessByProcessId Failed !"));
@@ -104,6 +102,17 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 		}
 	}
 	break;
+	case IOCTL_GMODHAN:
+	{
+		ULONG_PTR		Handle = 0;
+		LPCWSTR			MoudleName = pIoBuffer;
+		KAPC_STATE		ApcState;
+		KeStackAttachProcess(Process, &ApcState);
+		Handle = GetMoudleHandle(MoudleName);
+		KeUnstackDetachProcess(&ApcState);
+		RtlCopyMemory(pIoBuffer, &Handle, sizeof(ULONG_PTR));
+		info = OutLength;
+	}
 	default:
 		KdPrint(("<--->CODE ERROR !"));
 		Status = STATUS_UNSUCCESSFUL;

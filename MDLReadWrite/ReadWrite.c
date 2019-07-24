@@ -42,6 +42,7 @@ NTSTATUS ReadProcessMemory(PVOID VirtualAddress, SIZE_T Length, PVOID pIoBuffer)
 	//开始读
 	RtlCopyMemory(pIoBuffer, MapBuffer, Length);
 	MmUnmapLockedPages(MapBuffer, Mdl);
+	MmUnlockPages(Mdl);
 	IoFreeMdl(Mdl);
 	return Status;
 }
@@ -87,9 +88,43 @@ NTSTATUS WriteProcessMemory(PVOID VirtualAddress, SIZE_T Length, PVOID pIoBuffer
 		return Status;
 	}
 	//开始写
-	RtlCopyMemory(MapBuffer, (PVOID)((ULONG_PTR)pIoBuffer+sizeof(WRIO)), Length);
+	RtlCopyMemory(MapBuffer, (PVOID)((ULONG_PTR)pIoBuffer+sizeof(WRIO)), Length); 
 	MmUnmapLockedPages(MapBuffer, Mdl);
+	MmUnlockPages(Mdl);
 	IoFreeMdl(Mdl);
 	return Status;
 
+}
+
+
+
+ULONG_PTR GetMoudleHandle(LPCWSTR ModuleName) {
+	ULONG_PTR Base = 0;
+
+	PPEB Peb = PsGetProcessPeb(Process);
+	if (!Peb)
+		return Base;
+	__try
+	{
+		if (!Peb->Ldr || !Peb->Ldr->Initialized)
+			return Base;
+
+
+		UNICODE_STRING usModuleName;
+		RtlInitUnicodeString(&usModuleName, ModuleName);
+		for (PLIST_ENTRY List = Peb->Ldr->InLoadOrderModuleList.Flink;
+			List != &Peb->Ldr->InLoadOrderModuleList;
+			List = List->Flink) {
+
+			PLDR_DATA_TABLE_ENTRY Entry = CONTAINING_RECORD(List, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+			if (RtlCompareUnicodeString(&Entry->BaseDllName, &usModuleName, TRUE) == 0) {
+				Base = (ULONG_PTR)Entry->DllBase;
+			}
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		KdPrint(("EXCEPTION_EXECUTE_HANDLER getmoudle !"));
+	}
+	return Base;
 }

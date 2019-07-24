@@ -9,6 +9,7 @@
 #define IOCTL_READ IOCTL_CODE(1)
 #define IOCTL_WRITE IOCTL_CODE(2)
 #define IOCTL_INIT IOCTL_CODE(3)
+#define IOCTL_GMODHAN IOCTL_CODE(4)
 
 
 typedef struct WRIO
@@ -36,6 +37,7 @@ int main()
 	UCHAR InputBuffer[200] = { 0 };
 	UCHAR OutputBuffer[200] = { 0 };
 	BOOL bRet;
+	LPCWSTR MoudleName = L"aaa.exe";
 	int times;
 	while (true)
 	{
@@ -64,12 +66,16 @@ int main()
 
 		DeviceIoControl(hDevice, IOCTL_INIT, &Pid, sizeof(ULONG_PTR), NULL, 0, &dwRet, NULL);
 
+		DeviceIoControl(hDevice, IOCTL_GMODHAN, (LPVOID)MoudleName, sizeof(MoudleName)+1, OutputBuffer, sizeof(ULONG_PTR), &dwRet, NULL);
+
+		printf("Handle :%X", *(ULONG_PTR*)OutputBuffer);
+
 		//¶ÁÈ¡Êý¾Ý
 		DWORD_PTR start = GetTickCount();
 		for (size_t i = 0; i < times; i++)
 		{
 			bRet = DeviceIoControl(hDevice, IOCTL_READ, InputBuffer, sizeof(WRIO), OutputBuffer, ((PWRIO)InputBuffer)->Length, &dwRet, NULL);
-			printf("bRet: %d---%d\n", bRet,i);
+			//printf("bRet: %d---%d\n", bRet,i);
 		}
 		DWORD_PTR  end = GetTickCount();
 		printf("GetTickCount: %d\n", end - start);
