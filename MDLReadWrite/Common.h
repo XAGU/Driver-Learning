@@ -13,6 +13,7 @@
 #define IOCTL_WRITE IOCTL_CODE(2)
 #define IOCTL_INIT IOCTL_CODE(3)
 #define IOCTL_GMODHAN IOCTL_CODE(4)
+#define IOCTL_FORCEDELETE IOCTL_CODE(5)
 
 typedef unsigned long long QWORD;
 typedef unsigned short WORD;

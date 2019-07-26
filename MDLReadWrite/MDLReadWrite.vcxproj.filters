@@ -30,12 +30,18 @@
     <ClInclude Include="ReadWrite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ForceDelete.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DriverEntry.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="ReadWrite.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ForceDelete.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>

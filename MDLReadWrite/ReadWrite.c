@@ -70,7 +70,7 @@ NTSTATUS WriteProcessMemory(PVOID VirtualAddress, SIZE_T Length, PVOID pIoBuffer
 		// Always perform this operation in a try except block.
 		//  MmProbeAndLockPages will raise an exception if it fails.
 		//
-		MmProbeAndLockPages(Mdl, KernelMode, IoWriteAccess);
+		MmProbeAndLockPages(Mdl, KernelMode, IoReadAccess);
 	}
 	except(EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -119,6 +119,7 @@ ULONG_PTR GetMoudleHandle(LPCWSTR ModuleName) {
 			PLDR_DATA_TABLE_ENTRY Entry = CONTAINING_RECORD(List, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
 			if (RtlCompareUnicodeString(&Entry->BaseDllName, &usModuleName, TRUE) == 0) {
 				Base = (ULONG_PTR)Entry->DllBase;
+				break;
 			}
 		}
 	}

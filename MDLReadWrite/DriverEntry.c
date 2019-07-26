@@ -1,4 +1,5 @@
 #include "ReadWrite.h"
+#include "ForceDelete.h"
 
 NTSTATUS CreateDevice(PDRIVER_OBJECT pDriverObject)
 {
@@ -104,15 +105,36 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	break;
 	case IOCTL_GMODHAN:
 	{
-		ULONG_PTR		Handle = 0;
-		LPCWSTR			MoudleName = pIoBuffer;
-		KAPC_STATE		ApcState;
-		KeStackAttachProcess(Process, &ApcState);
-		Handle = GetMoudleHandle(MoudleName);
-		KeUnstackDetachProcess(&ApcState);
-		RtlCopyMemory(pIoBuffer, &Handle, sizeof(ULONG_PTR));
-		info = OutLength;
+		if (!Process)
+		{
+			info = 0;
+		}
+		else
+		{
+			ULONG_PTR		Handle = 0;
+			KAPC_STATE		ApcState;
+			RtlZeroMemory((PVOID)((ULONG_PTR)pIoBuffer + InLength), 2);
+			KeStackAttachProcess(Process, &ApcState);
+			Handle = GetMoudleHandle((LPCWSTR)pIoBuffer);
+			KeUnstackDetachProcess(&ApcState);
+			*(ULONG_PTR*)pIoBuffer = Handle;
+			info = OutLength;
+		}
 	}
+	break;
+	case IOCTL_FORCEDELETE:
+	{
+		RtlZeroMemory((PVOID)((ULONG_PTR)pIoBuffer + InLength), 2);
+		if (!ForceDelete((LPCWSTR)pIoBuffer))
+		{
+			info = 0;
+		}
+		else
+		{
+			info = OutLength;
+		}
+	}
+	break;
 	default:
 		KdPrint(("<--->CODE ERROR !"));
 		Status = STATUS_UNSUCCESSFUL;
