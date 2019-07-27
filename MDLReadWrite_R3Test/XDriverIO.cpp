@@ -27,6 +27,11 @@ XDriverIO::XDriverIO(ULONG_PTR Pid):m_Pid(Pid)
 	MessageBox(NULL, (LPWSTR)TEXT("驱动安装成功！"), (LPWSTR)TEXT("提示"), MB_OK);
 	//加载驱动
 	LoadDriver(ExePath() + L"\\XDriverIO.sys", L"XDriverIO", L"Kernel level readprocessmemory and writeprocessmemory");
+	m_InBuffer = malloc(200);
+	RtlZeroMemory(m_InBuffer, 200);
+	m_OutBuffer = malloc(200);
+	RtlZeroMemory(m_OutBuffer, 200);
+	InitDevice(m_Pid);
 	//删除sys
 	//DeleteFile(ExePath().append(L"\\XDriverIO.sys").c_str());
 	//驱动删除sys
@@ -38,11 +43,6 @@ XDriverIO::XDriverIO(ULONG_PTR Pid):m_Pid(Pid)
 	{
 		std::cout << "fail" << std::endl;
 	}
-	m_InBuffer = malloc(200);
-	RtlZeroMemory(m_InBuffer, 200);
-	m_OutBuffer = malloc(200);
-	RtlZeroMemory(m_OutBuffer, 200);
-	InitDevice(m_Pid);
 	SetPid();
 }
 

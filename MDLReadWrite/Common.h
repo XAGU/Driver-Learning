@@ -3,6 +3,9 @@
 #include <ntimage.h>
 
 
+#define MAX_PATH          260
+
+
 #define DEV_NAME L"\\Device\\MyDevice"
 #define SYM_LINK_NAME L"\\??\\MySymLink"
 

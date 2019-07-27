@@ -39,6 +39,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="D:\桌面\MDLReadWrite.sys" />
+    <None Include="..\x64\Debug\MDLReadWrite.sys" />
   </ItemGroup>
 </Project>

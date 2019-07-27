@@ -124,8 +124,10 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT pDriverObj, PIRP pIrp)
 	break;
 	case IOCTL_FORCEDELETE:
 	{
+		WCHAR FilePath[MAX_PATH] = L"\\??\\";
 		RtlZeroMemory((PVOID)((ULONG_PTR)pIoBuffer + InLength), 2);
-		if (!ForceDelete((LPCWSTR)pIoBuffer))
+		wcscat(FilePath, pIoBuffer);
+		if (!ForceDelete(FilePath))
 		{
 			info = 0;
 		}

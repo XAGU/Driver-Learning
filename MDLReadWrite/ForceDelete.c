@@ -1,12 +1,11 @@
 #include "ForceDelete.h"
 
-
 //Çý¶¯Ç¿É¾
 //from https://github.com/icewall/ForceDelete/blob/7c4ef89ce3030c29f5b8f214b427bccf1b24a1e5/utilities.c#L235
 BOOLEAN ForceDelete(LPCWSTR path)
 {
 	HANDLE fileHandle;
-	NTSTATUS result;
+	NTSTATUS Status;
 	IO_STATUS_BLOCK ioBlock;
 	DEVICE_OBJECT *device_object = NULL;
 	void* object = NULL;
@@ -25,7 +24,7 @@ BOOLEAN ForceDelete(LPCWSTR path)
 		NULL,
 		NULL);
 
-	result = IoCreateFileSpecifyDeviceObjectHint(
+	Status = IoCreateFileSpecifyDeviceObjectHint(
 		&fileHandle,
 		SYNCHRONIZE | FILE_WRITE_ATTRIBUTES | FILE_READ_ATTRIBUTES | FILE_READ_DATA, //0x100181 
 		&fileObject,
@@ -41,15 +40,15 @@ BOOLEAN ForceDelete(LPCWSTR path)
 		0,
 		IO_IGNORE_SHARE_ACCESS_CHECK,
 		device_object);
-	if (result != STATUS_SUCCESS)
+	if (!NT_SUCCESS(Status))
 	{
 		DbgPrint("error in IoCreateFileSpecifyDeviceObjectHint");
 		goto _Error;
 	}
 
-	result = ObReferenceObjectByHandle(fileHandle, 0, 0, 0, &object, 0);
+	Status = ObReferenceObjectByHandle(fileHandle, 0, 0, 0, &object, 0);
 
-	if (result != STATUS_SUCCESS)
+	if (!NT_SUCCESS(Status))
 	{
 		DbgPrint("error in ObReferenceObjectByHandle");
 		ZwClose(fileHandle);
@@ -61,19 +60,12 @@ BOOLEAN ForceDelete(LPCWSTR path)
 	*/
 	((FILE_OBJECT*)object)->SectionObjectPointer->ImageSectionObject = 0;
 	((FILE_OBJECT*)object)->DeleteAccess = 1;
-	result = ZwDeleteFile(&fileObject);
 
 	ObDereferenceObject(object);
 	ZwClose(fileHandle);
 
-	if (result != STATUS_SUCCESS)
-	{
-		DbgPrint("\n[+]error in ZwDeleteFile");
-		goto _Error;
-	}
-
-	result = ZwDeleteFile(&fileObject);
-	if (NT_SUCCESS(result))
+	Status = ZwDeleteFile(&fileObject);
+	if (NT_SUCCESS(Status))
 	{
 		KeDetachProcess();
 		return TRUE;
@@ -82,3 +74,4 @@ _Error:
 	KeDetachProcess();
 	return FALSE;
 }
+
