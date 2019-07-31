@@ -60,6 +60,7 @@ void CreateThreadNotifyRoutine(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create
 	if (Create == 0)
 	{ //Create 等于0 代表结束 
 		PsLookupProcessByProcessId(ProcessId, &p_Process);
+		ObDereferenceObject(p_Process);
 		if (strstr(PsGetProcessImageFileName(p_Process), "Realm.exe")!=NULL || strstr(PsGetProcessImageFileName(p_Process), "AAA.exe") != NULL)
 		{
 			bDieTherad = HAVE_THREAD;

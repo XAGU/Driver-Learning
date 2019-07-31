@@ -81,6 +81,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MDLReadWrite", "MDLReadWrit
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MDLReadWrite_R3Test", "MDLReadWrite_R3Test\MDLReadWrite_R3Test.vcxproj", "{263001A9-5B28-4727-8076-02869CED0743}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NuklearTest", "..\..\NuklearTest\NuklearTest\NuklearTest.vcxproj", "{551957AD-DD3B-4C6C-88EE-3A1736F3763A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -957,6 +959,18 @@ Global
 		{263001A9-5B28-4727-8076-02869CED0743}.Release|x64.Build.0 = Release|x64
 		{263001A9-5B28-4727-8076-02869CED0743}.Release|x86.ActiveCfg = Release|Win32
 		{263001A9-5B28-4727-8076-02869CED0743}.Release|x86.Build.0 = Release|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Debug|ARM.ActiveCfg = Debug|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Debug|x64.ActiveCfg = Debug|x64
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Debug|x64.Build.0 = Debug|x64
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Debug|x86.ActiveCfg = Debug|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Debug|x86.Build.0 = Debug|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Release|ARM.ActiveCfg = Release|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Release|ARM64.ActiveCfg = Release|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Release|x64.ActiveCfg = Release|x64
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Release|x64.Build.0 = Release|x64
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Release|x86.ActiveCfg = Release|Win32
+		{551957AD-DD3B-4C6C-88EE-3A1736F3763A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
